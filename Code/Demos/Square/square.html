@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<head>
+    <script type="text/javascript" src="../Common/initShaders.js"></script>
+
+    <script id="square-vertex-shader" type="x-shader/x-vertex">#version 300 es
+
+        in vec4 aPosition;
+
+        void main()
+        {
+            vec4 c = aPosition;
+            c.xy -= vec2(0.75, 0.75);
+            gl_Position = c;
+        }
+    </script>
+
+    <script id="square-fragment-shader" type="x-shader/x-fragment">#version 300 es
+
+        precision highp float;
+
+        out vec4 fColor;
+
+        void main()
+        {
+            fColor = vec4(1.0, 1.0, 1.0, 1.0);
+        }
+    </script>
+
+    <script type="text/javascript">
+        var gl = null;
+        var square = null;
+
+        function Square() {
+
+            this.program = initShaders(gl, "square-vertex-shader", "square-fragment-shader");
+
+            this.count = 4;
+
+            this.positions = {
+                values : new Float32Array([
+                    0.0, 0.0,  // Vertex 0
+                    1.0, 0.0,  // Vertex 1
+                    0.0, 1.0,  // Vertex 3
+                    1.0, 1.0,  // Vertex 2
+                ]),
+                numComponents : 2
+            };
+
+            this.positions.buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.positions.buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, this.positions.values, gl.STATIC_DRAW);
+            this.positions.attributeLoc = gl.getAttribLocation(this.program, "aPosition");
+            gl.enableVertexAttribArray(this.positions.attributeLoc);
+
+            this.render = function () {
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.positions.buffer);
+                gl.vertexAttribPointer(this.positions.attributeLoc, this.positions.numComponents, gl.FLOAT, false, 0, 0);
+
+                gl.useProgram(this.program);
+
+                var start = 0;
+                var count = this.count;
+                gl.drawArrays(gl.TRIANGLE_STRIP, start, count);
+            }
+        };
+
+        function init() {
+            var canvas = document.getElementById("webgl-canvas");
+            gl = canvas.getContext("webgl2");
+
+            square = new Square();
+
+            gl.clearColor(1.0, 0.00, 1.0, 1.0);
+
+            render();
+        }
+
+        function render() {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            square.render();
+        }
+
+        window.onload = init;
+    </script>
+
+</head>
+<body>
+    <canvas id="webgl-canvas" width="512" height="512"></canvas>
+</body>
