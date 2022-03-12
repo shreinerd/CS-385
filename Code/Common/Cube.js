@@ -15,10 +15,14 @@ function Cube( vertexShaderId, fragmentShaderId ) {
 
     P = gl.getUniformLocation( program, "P" );
     MV = gl.getUniformLocation( program, "MV" );
+    color = gl.getUniformLocation( program, "color" );
 
     // Define properties for setting shader variables
-    if ( P )  { this.P = undefined; }
-    if ( MV ) { this.MV = undefined; }
+    if ( P )  { this.P = mat4(); }
+    if ( MV ) { this.MV = mat4(); }
+    if ( color ) { this.color = vec4(); }
+
+    this.PointMode = gl.TRIANGLES;
 
     aPosition.data = new Float32Array([
         -0.5, -0.5,  0.5,  // Vertex 0
@@ -31,20 +35,22 @@ function Cube( vertexShaderId, fragmentShaderId ) {
         -0.5,  0.5, -0.5,  // Vertex 7
     ]);
     
-    let indices.data = new Uint16Array([
-        0, 2, 1,
-        0, 3, 2,
-        1, 2, 6,
-        1, 6, 5,
-        0, 4, 3,
-        4, 7, 3,
-        5, 7, 4,
-        5, 6, 7,
-        3, 6, 2,
-        3, 7, 6,
-        4, 1, 5,
-        4, 0, 1  
-    ]);
+    let indices = {
+        data : new Uint16Array([
+            0, 2, 1,
+            0, 3, 2,
+            1, 2, 6,
+            1, 6, 5,
+            0, 4, 3,
+            4, 7, 3,
+            5, 7, 4,
+            5, 6, 7,
+            3, 6, 2,
+            3, 7, 6,
+            4, 1, 5,
+            4, 0, 1
+        ])
+    };
         
     aPosition.buffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, aPosition.buffer );
@@ -65,8 +71,10 @@ function Cube( vertexShaderId, fragmentShaderId ) {
 
         if ( P )  { gl.uniformMatrix4fv( P, false, flatten(this.P) ); }
         if ( MV ) { gl.uniformMatrix4fv( MV, false, flatten(this.MV) ); }
+        if ( color ) { gl.uniform4fv( color, flatten(this.color) ); }
 
         // Draw the cube's base
-        gl.drawElements( gl.TRIANGLES, indices.count, gl.UNSIGNED_SHORT, 0 );
+        gl.drawElements( this.PointMode ? gl.POINTS : gl.TRIANGLES,
+             indices.count, gl.UNSIGNED_SHORT, 0 );
     }
 };
