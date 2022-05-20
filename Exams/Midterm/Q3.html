@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<script src="../../Code/Common/initShaders.js"></script>
+
+<script id="vertex" type="x-shader/x-vertex">
+
+    out vec4 vColor;
+
+    void main()
+    {
+        vec4 c = vec4(0.0);
+
+        c[gl_VertexID] = 1.0;
+        c.a = 1.0;
+        vColor = c;
+
+        const float Pi = 3.14159265358979;
+        const float dtheta = (2.0/3.0) * Pi ;
+        float theta = float(gl_VertexID) * dtheta + Pi / 2.0; 
+        gl_Position = vec4(0.5 * cos(theta), 0.5 * sin(theta), 0.0, 1.0);
+    }
+</script>
+
+<script id="fragment" type="x-shader/x-fragment">
+
+    in  vec4 vColor;
+    out vec4 fColor;
+
+    void main()
+    {
+        const vec4 white = vec4(1.0);
+
+        bvec4 zero = lessThan(vColor, vec4(0.005));
+        fColor = any(zero) ? white : vColor;
+        // fColor = vec4(0.0, 0.8, 0.1, 1.0);
+    }
+</script>
+
+<script>
+    window.onload = function () {
+        let canvas = document.getElementById("canvas");
+        let gl = canvas.getContext("webgl2");
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        
+        let program = initShaders(gl, "vertex", "fragment");
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(program);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+</script>
+
+<body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+</body>
