@@ -41,7 +41,8 @@ function Disk( slices, innerRadius, vertexShader, fragmentShader ) {
 
     let positions = [];
     // Generate the coordinates for the vertices of the disk.
-    if (innerRadius == 0.0) {
+    const almostZero = 0.0001;  // value for a float to effectively be zero
+    if (innerRadius === undefined || innerRadius < almostZero) {
         // The disk is a filled circle, so we can render it using a 
         //   triangle fan.  First, we push the coordinate of the
         //   shared vertex of all of the fan triangles.

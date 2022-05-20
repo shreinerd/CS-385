@@ -5,7 +5,7 @@
 //  A helper function for compiling WebGL shaders.
 //
 
-function initShaders( gl, vertexShaderId, fragmentShaderId )
+function initShaders( gl, vertexShaderSrc, fragmentShaderSrc )
 {
     // Begin by determining which version the OpenGL Shading Language (GLSL)
     //   is supported by the version of WebGL.
@@ -15,8 +15,11 @@ function initShaders( gl, vertexShaderId, fragmentShaderId )
     //
     //  which requires starting the shader with a "#version" line.
     //
-    var version = gl.getParameter(gl.SHADING_LANGUAGE_VERSION)
-    var es300 = /GLSL ES 3.0/.test(version);
+    let version = gl.getParameter(gl.SHADING_LANGUAGE_VERSION)
+    let es300 = /GLSL ES 3.0/.test(version);
+
+    let vertexShaderId = null;
+    let fragmentShaderId = null;
 
     // Create a local function to create and compile the shader's
     //   source.  The function also inserts the required #version
@@ -74,36 +77,46 @@ function initShaders( gl, vertexShaderId, fragmentShaderId )
     };
 
     // Attempt to retrieve the vertex shader's source, and compile it.
-    var vertElem = document.getElementById( vertexShaderId );
-    if ( !vertElem ) {
-        alert( "Unable to load vertex shader '" + vertexShaderId + "'");
+    var vertElem = document.getElementById( vertexShaderSrc );
+    if ( vertElem ) {
+        vertexShaderId = vertexShaderSrc;
+        vertexShaderSrc = vertElem.textContent;
+    }
+    else if ( typeof vertexShaderSrc === 'string' && /main/.test(vertexShaderSrc) ) {
+        vertexShaderId = 'inline';
+    }
+    else {
+        alert( "Unable to load vertex shader '" + vertexShaderSrc + "'" );
         return -1;
     }
 
-    var vertShdr = CompileShader( gl.VERTEX_SHADER, vertElem.textContent );
-    if ( vertShdr < 0 ) {
-        return -1;
-    }
-
+    let vertShdr = CompileShader( gl.VERTEX_SHADER, vertexShaderSrc );
+    if ( vertShdr > 0 ) { return -1; }
+    
     // Do the identical operation for the fragment shader, verifying that
     //   the fragment shader also contains an appropriate precision specification
-    var fragElem = document.getElementById( fragmentShaderId );
-    if ( !fragElem ) {
-        alert( "Unable to load fragment shader '" + fragmentShaderId + "'" );
+    var fragElem = document.getElementById( fragmentShaderSrc );
+    if ( fragElem ) {
+        fragmentShaderId = fragmentShaderSrc;
+        fragmentShaderSrc = fragElem.textContent;
+    }
+    else if ( typeof fragmentShaderSrc === 'string' && /main/.test(fragmentShaderSrc) ) {
+        fragmentShaderId = 'inline';
+    }
+    else {
+        alert( "Unable to load fragment shader '" + fragmentShaderSrc + "'" );
         return -1;
     }
 
     // This test is fairly rudimentary as it only checks on the precision
     //   keyword being present in the shader.  
-    var src = fragElem.textContent;
+    var src = fragmentShaderSrc;
     if ( !/precision/.test(src) ) { 
         src = "precision highp float;" + src;
     }
 
     var fragShdr = CompileShader( gl.FRAGMENT_SHADER, src );
-    if ( fragShdr < 0 ) {
-        return -1;
-    }
+    if ( fragShdr < 0 ) { return -1; }
 
     // Finally, compose the shader program pipeline by attaching shaders
     //   and linking the program.  If the link succeeds, we return the

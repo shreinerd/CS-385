@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<script src="../initShaders.js"></script>
+<script src="../MV.js"></script>
+<script src="Quad.js"></script>
+<script src="Disk.js"></script>
+<script src="Triangle.js"></script>
+
+<script>
+    "use strict";
+
+    let gl = undefined;
+    let shape = undefined;
+
+    window.onload = function () {
+        let canvas = document.getElementById("canvas");
+        gl = canvas.getContext("webgl2");
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+        shape = new Disk();
+        shape.color = [1, 0, 0, 1];
+     
+        let angle = 0.0;
+
+        function render() {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            shape.render();
+
+            requestAnimationFrame(render);
+        }
+
+        render();
+    };
+</script>
+
+<canvas id="canvas" width="512" height="512" style="background-color: #0000FF";></canvas><br/>
+<style>
+    input { 
+        height: 40px;
+        position: relative;
+        bottom: 0;
+    }
+</style>
+<div>
+    <label># Vertices</label>
+    <input type="range" min="4" max="36" value="12" style="width: 512px"
+        oninput="shape.slices = this.value;">
+    </input>
+</div>

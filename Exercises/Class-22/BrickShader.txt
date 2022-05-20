@@ -1,0 +1,36 @@
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    // Brick measurements are in millimeters, so we'll
+    //   do one mm per pixel
+    vec2 brick = vec2(215.0, 65.0);
+    
+    // const float brickWidth = 215.0;
+    // const float brickHeight = 65.0;
+    const float mortarWidth = 10.0;
+    
+    const vec4  brickColor = vec4(.668, .475, .259, 1.0);
+    const vec4  mortarColor = vec4(1.0);
+    
+    vec2 sizes = brick + mortarWidth;
+    
+    // float x = mod(fragCoord.x, brickWidth + mortarWidth);
+    // float y = mod(fragCoord.y, brickHeight + mortarWidth);
+    
+    vec2 p = mod(fragCoord, sizes);
+    
+    // A row of bricks is called a "course".  We need to 
+    //   know the course to determine if the brick should
+    //   be offset from its neighboring ocourses
+    int course = int(fragCoord.y / sizes.y);
+    
+    if (course % 2 == 1) { p.x += 0.5*sizes.x; }
+
+    
+    // vec4 color = x < brickWidth && y < brickHeight ? brickColor : mortarColor;
+    vec4 color = all(lessThan(p, brick)) ? brickColor : mortarColor;
+
+    // vec4 color = vec4(float(course)/10.0, 0, 0, 1);
+    // color = vec4(vec3(float(course)/10.0), 1.0);
+    // Output to screen
+    fragColor = color;
+}

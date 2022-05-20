@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<script src="../../Common/initShaders.js"></script>
+<script src="../../Common/MV.js"></script>
+<script src="../../Common/Cone.js"></script>
+
+<script>
+    var gl;
+    var cone;
+
+    function init () {
+        var canvas = document.getElementById("canvas");
+        gl = canvas.getContext("webgl2");
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+
+        cone = new Cone(gl, 36);
+        cone.color = vec4(1.0, 1.0, 0.0, 1.0);
+        cone.PointMode = true;
+
+        var w = canvas.clientWidth;
+        var h = canvas.clientHeight;
+
+        function mousemove(event) {
+                var x = event.clientX;
+                var y = event.clientY;
+                console.log( `move => ( ${x}, ${y} )` );
+        };
+
+        canvas.onmousedown = function(event) {
+            var x = event.clientX;
+            var y = event.clientY;
+
+
+            console.log( `down => ( ${x}, ${y} )` );
+
+            canvas.addEventListener("mousemove", mousemove);
+        };
+
+        window.onkeypress = function (event) {
+            console.log(`keyCode => ${event.keyCode}   '${event.key}'`);
+            switch(event.key) {
+                case 'A': console.log('A'); break;
+            }
+        };
+
+        canvas.onmouseup = function(event) { 
+            canvas.removeEventListener("mousemove", mousemove);
+        };
+
+        render();
+    };
+
+    function render() {
+        gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+
+        cone.render();
+    }
+
+    window.onload = init;
+</script>
+
+<script id="Cone-vertex-shader" type="x-shader/x-vertex">
+    in vec4 aPosition;
+    
+    uniform mat4  P;
+    uniform mat4  MV;
+
+    void main()
+    {
+        gl_PointSize = 3.0;
+        gl_Position = P * MV * 0.8 * aPosition;
+        gl_Position.w = 1.0;
+    }
+</script>
+
+<script id="Cone-fragment-shader" type="x-shader/x-fragment">
+    out vec4 fColor;
+    
+    uniform vec4 color;
+    
+    void main()
+    {
+        fColor = color;
+    }
+</script>
+
+<body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+</body>

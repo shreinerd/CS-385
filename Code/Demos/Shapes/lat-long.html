@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+
+<script src="../../Common/initShaders.js"></script>
+<script src="../../Common/MV.js"></script>
+<script src="../../Common/MatrixStack.js"></script>
+
+<script id="V" type="x-shader/x-vertex">
+
+    uniform mat4 P;
+    uniform mat4 MV; 
+
+    void main() 
+    {
+        
+        gl_Position = P * MV * pos;
+    }
+</script>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<script src="../../Common/initShaders.js"></script>
+<script src="../../Common/MV.js"></script>
+<script src="../../Common/DrawArray.js"></script>
+<script src="../../Common/FullScreenQuad.js"></script>
+<script src="game-of-life.js"></script>
+
+<script id="DrawArrays-vs" type="x-shader/x-vertex">
+	in vec4 aPosition;
+
+    uniform mat4 P;
+    uniform mat4 MV;
+
+    void main() { 
+        gl_PointSize = 1.0;
+        gl_Position = aPosition;
+    }
+</script>
+
+<script id="DrawArrays-fs" type="x-shader/x-fragment">
+    uniform vec4 color;
+
+    out vec4 fColor;
+
+    void main() {
+        fColor = color;
+    }
+</script>
+
+<script id="Quad-vs2" type="x-shader/x-vertex">
+	in vec4 aPosition;
+	in vec2 aTexCoord;
+
+	out vec2 vTexCoord;
+
+	void main() {
+		vTexCoord = aTexCoord;
+		gl_Position = aPosition; // vec4( 2.0 * vTexCoord - 1.0, 0.0, 1.0 ); // vec4( vTexCoord, 0, 1 );
+	}
+</script>
+
+<script id="Generator-fs" type="x-shader/x-fragment">
+	uniform sampler2D tex;
+	uniform vec2 viewportSize;
+
+	out vec4 fColor;
+
+	void main() { 
+		vec2 c = gl_FragCoord.xy;
+
+		float me = texture( tex, (c + vec2(  0,  0 )) / viewportSize ).r;
+		float up = texture( tex, (c + vec2(  0,  1 )) / viewportSize ).r;
+		float ul = texture( tex, (c + vec2( -1,  1 )) / viewportSize ).r;
+		float lf = texture( tex, (c + vec2( -1,  0 )) / viewportSize ).r;
+		float ll = texture( tex, (c + vec2( -1, -1 )) / viewportSize ).r;
+		float dn = texture( tex, (c + vec2(  0, -1 )) / viewportSize ).r;
+		float lr = texture( tex, (c + vec2(  1, -1 )) / viewportSize ).r;
+		float rt = texture( tex, (c + vec2(  1,  0 )) / viewportSize ).r;
+		float ur = texture( tex, (c + vec2(  1,  1 )) / viewportSize ).r;
+
+		int count = 0;
+		count += int( up > 0.0 );
+		count += int( ul > 0.0 );
+		count += int( lf > 0.0 );
+		count += int( ll > 0.0 );
+		count += int( dn > 0.0 );
+		count += int( lr > 0.0 );
+		count += int( rt > 0.0 );
+		count += int( ur > 0.0 );
+
+		bool cellAlive = bool( me > 0.0 );
+		bool live = (cellAlive && count == 2) || count == 3;
+
+		fColor = float(live) * vec4( 1.0 );
+	}
+</script>
+
+<script id="Display-fs" type="x-shader/x-fragment">
+	uniform sampler2D tex;
+	uniform vec2 viewportSize;
+	
+	out vec4  fColor;
+
+	void main() { 
+		vec2 tc = gl_FragCoord.xy / viewportSize;
+		fColor = /* vec4( tc, 0, 1 ); // */ texture( tex, tc );
+	}
+</script>
+
+</head>
+<body>
+<canvas id="webgl-canvas" width="1280" height="1024" style="background-color: #0000FF"></canvas>
+</body>
+</html>

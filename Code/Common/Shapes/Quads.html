@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+
+<script src="../initShaders.js"></script>
+<script src="../MV.js"></script>
+<script src="Quad.js"></script>
+<script src="Disk.js"></script>
+<script src="Triangle.js"></script>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+    uniform vec4  color;
+    uniform float count;
+    uniform mat4  R[30];
+
+    void main() {
+        float scale = 0.1; // 2.0 / (2.0*count + 1.0); 
+        
+        float instance = float(gl_InstanceID);
+        vec2  offset = (0.8*2.0) *vec2(mod(instance, count), floor(instance / count)) / (count - 1.0) - 0.8;
+
+        vec2  v;
+        v.x = float(gl_VertexID == 1 || gl_VertexID == 2);
+        v.y = float(gl_VertexID / 2);
+        v -= 0.5;
+        v *= scale;
+        
+        mat4 MV = R[gl_InstanceID];
+        #if 1
+        MV[3].xy = offset;
+        #else
+        v += offset;
+        #endif
+        gl_Position = MV * vec4(v, 0.0, 1.0);
+    }
+</script>
+
+<script>
+    "use strict";
+
+    let gl = undefined;
+    let shape = undefined;
+
+    window.onload = function () {
+        let canvas = document.getElementById("canvas");
+        gl = canvas.getContext("webgl2");
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+        shape = new Quad("vertex-shader");
+        shape.color = [1, 0, 0, 1];
+        shape.count = 3;
+
+        let color = gl.getUniformLocation(shape.program, "color");
+        let count = gl.getUniformLocation(shape.program, "count");
+        
+
+        shape.render = function (angle) {
+            gl.useProgram(shape.program);
+            gl.uniform4fv(color, shape.color);
+            gl.uniform1f(count, shape.count);
+            let instances = shape.count * shape.count;
+            let R = [];
+            for ( let i = 0; i < instances; ++i) {
+                 let Rloc = gl.getUniformLocation(shape.program, "R[" + i +"]");
+                R = rotateX(angle*i);
+                gl.uniformMatrix4fv(Rloc, false, flatten(R));
+            }
+            gl.drawArraysInstanced(gl.TRIANGLE_FAN, 0, 4, instances);
+        }
+        let angle = 0.0;
+
+        function render() {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            angle += 2.0;
+
+            shape.render(angle);
+
+            requestAnimationFrame(render);
+        }
+
+        render();
+    };
+</script>
+
+<canvas id="canvas" width="512" height="512" style="background-color: #0000FF";></canvas><br/>
+<style>
+    input { 
+        height: 40px;
+        position: relative;
+        bottom: 0;
+    }
+</style>
+<div>
+    <input type="range" min="3" max="15" value="3" step="2" style="width: 512px"
+        oninput="shape.count = this.value;">
+    </input>
+</div>

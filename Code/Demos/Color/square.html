@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+
+<script src="../../Common/initShaders.js"></script>
+
+<script id="vertex" type="x-shader/x-vertex">
+
+    in  vec4  aPosition;
+    in  vec4  aColor;
+    out vec4  vColor;
+
+    void main()
+    {
+        vColor = aColor;
+        gl_Position = vec4(aPosition.xy - 0.5, aPosition.zw);
+    }
+</script>
+
+<script id="fragment" type="x-shader/x-fragment">
+
+    in  vec4 vColor;
+    out vec4 fColor;
+
+    void main()
+    {
+        fColor = vColor;
+    }
+</script>
+
+<script>
+    var gl;
+
+    function Square() {
+        program = initShaders(gl, "vertex", "fragment");
+
+        positions = [
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            0.0, 1.0
+        ];
+        positions.numComponents = 2;
+
+        positions.buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positions.buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+        aPosition = gl.getAttribLocation(program, "aPosition");
+        gl.enableVertexAttribArray(aPosition);
+
+        colors = [
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+            1.0, 1.0, 1.0
+        ];
+        colors.numComponents = 3;
+
+        colors.buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colors.buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+        aColor = gl.getAttribLocation(program, "aColor");
+        gl.enableVertexAttribArray(aColor);
+
+        this.render = function () {
+            gl.useProgram(program);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, positions.buffer);
+            gl.vertexAttribPointer(aPosition, positions.numComponents, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, colors.buffer);
+            gl.vertexAttribPointer(aColor, colors.numComponents, gl.FLOAT, false, 0, 0);
+
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+        };
+    }
+
+    window.onload = function () {
+        let canvas = document.getElementById("canvas");
+        gl = canvas.getContext("webgl2");
+
+        let square = new Square();
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        
+        render = function () {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            square.render();
+        };
+
+        requestAnimationFrame(render);
+    };
+</script>
+
+<body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+</body>

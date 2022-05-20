@@ -17,7 +17,7 @@ function init() {
     annulus = new Disk(4, 0.25);
     annulus.color = vec4(1.0, 0.0, 0.0, 1.0);
 
-    disk = new Disk(36, 0.0);
+    disk = new Disk();
     disk.color = vec4(0.0, 0.0, 1.0, 1.0);
 
     requestAnimationFrame(render);

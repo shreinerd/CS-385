@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<script src="../../Common/initShaders.js"></script>
+<script src="../../Common/MV.js"></script>
+<script src="../../Common/MatrixStack.js"></script>
+
+<!-- 
+--- Filled vertex lighting
+-->
+<script id="vl-s-v" type="x-shader/x-vertex">
+
+    uniform mat4 P;
+    uniform mat4 MV;
+    uniform mat3 N;
+    uniform int  level;
+
+    uniform vec4  lightPos;
+
+    out vec4 vColor;
+
+    struct Material {
+        vec3  ambient;
+        vec3  diffuse;
+        vec3  specular;
+        float shininess;
+    };
+
+    struct Light {
+        vec3  ambient;
+        vec3  diffuse;
+        vec3  specular;
+    };
+
+    const vec3 white = vec3(1.0);
+    const vec3 blue = vec3(0.0, 0.0, 1.0);
+
+    void main()
+    {
+        vec3 n = vec3(0.0, 0.0, 1.0);
+        vec3 nHat = normalize(N * n);
+
+        int v = gl_VertexID;
+        int i = gl_InstanceID;
+
+        float d = 1.0 / float(level);
+
+        vec2 xy = d * vec2(v / 2, v % 2 + i) - 0.5;
+        vec4 p = vec4(xy, 0.0, 1.0);
+
+        Material  m = Material(0.05 * white, blue, white, 20.0);
+        Light     l = Light(white, white, white);
+
+        vec3 lightDir = lightPos.w > 0.0 ? lightPos.xyz - p.xyz : lightPos.xyz;
+        vec3 lHat = normalize(lightDir);
+
+        vec3 eyeDir = vec3(0.0, 0.0, 1.0);
+
+        vec3 hHat = normalize(0.5*(lightDir + eyeDir));
+
+        vec3 Ia = m.ambient * l.ambient;
+        vec3 Id = m.diffuse * l.diffuse * max(dot(nHat, lHat), 0.0);
+        vec3 Is = m.specular * l.specular * max(pow(dot(nHat, hHat), m.shininess), 0.0);
+
+        vColor.rgb = lightPos.xyz;
+        // vColor.rgb = max(n - nHat, vec3(0.0));
+        // vColor.rgb = vec3(max(dot(n, lightDir), 0.0), 0, 0);
+        // vColor.rgb = vec3(min(dot(n,lightDir), 0.0));
+        // vColor.rgb = Ia + Id; //  + Is;
+        vColor.a   = 1.0;
+
+        gl_PointSize = 5.0;
+        gl_Position = P * MV * p;
+    }
+</script>
+
+<script id="vl-s-f" type="x-shader/x-fragment">
+    in  vec4 vColor;
+    out vec4 fColor;
+
+    void main() 
+    {
+        fColor = vColor;
+    }
+</script>
+
+<!--
+--- Wireframe vertex lighting
+-->
+<script id="vl-w-v" type="x-shader/x-vertex">
+
+    uniform mat4 P;
+    uniform mat4 MV;
+    uniform int  level;
+
+    out vec4 vColor;
+
+    void main()
+    {
+        float d = 1.0 / float(level);
+        int i = gl_VertexID;
+
+        vec2 xy = d * vec2(i / 2, i % 2) - 0.5;
+
+        vColor = vec4(1.0, 0.0, 0.0, 1.0);
+        gl_Position = P * MV * vec4(xy, 0.0, 1.0);
+    }
+</script>
+
+<script id="vl-w-f" type="x-shader/x-fragment">
+    in  vec4 vColor;
+    out vec4 fColor;
+
+    void main() 
+    {
+        fColor = vColor;
+    }
+</script>
+
+<script>
+    var gl;
+    var render;
+    var uniforms = {};
+    let programs = {};
+
+    var method = "vertex";
+    function setMethod(value) { 
+        method = value;
+        requestAnimationFrame(render);
+    }
+
+    var tessLevel = 1;
+    function setTess(event) { 
+        tessLevel = event.target.value; 
+        requestAnimationFrame(render);
+    }
+
+    var topology;
+    function setMode(event) { 
+        topology = event.target.checked ? gl.POINTS : gl.TRIANGLE_STRIP;
+        requestAnimationFrame(render);
+    }
+
+    function setLight(event) { 
+        uniforms.lightPos[3] = event.target.checked ? 1.0 : 0.0;
+        requestAnimationFrame(render);
+    }
+
+    function Program(vertex, fragment) {
+        let program = initShaders(gl, vertex, fragment);
+
+        let P = gl.getUniformLocation(program, "P");
+        let MV = gl.getUniformLocation(program, "MV");
+        let N = gl.getUniformLocation(program, "N");
+        let level = gl.getUniformLocation(program, "level");
+        let lightPos = gl.getUniformLocation(program, "lightPos");
+
+        this.use = function() {
+            gl.useProgram(program);
+
+            gl.uniformMatrix4fv(P, false, flatten(uniforms.P));
+            gl.uniformMatrix4fv(MV, false, flatten(uniforms.MV));
+            gl.uniformMatrix3fv(N, false, flatten(uniforms.N));
+            gl.uniform4fv(lightPos, flatten(uniforms.lightPos));
+            gl.uniform1i(level, tessLevel);
+        };
+    };
+
+    window.onload = function () {
+        let canvas = document.getElementById("canvas");
+        gl = canvas.getContext("webgl2");
+
+        programs.vertex = new Program("vl-s-v", "vl-s-f");
+
+        let near = 1.0;
+        let far  = near + 1.0;
+
+        window.onresize = function() {
+            let w = canvas.clientWidth;
+            let h = canvas.clientHeight;
+            let aspect = w / h;
+
+            gl.viewport(0, 0, w, h);
+
+            uniforms.P = perspective(60.0, aspect, near, far);
+        };
+
+        window.onresize();
+
+        ms = new MatrixStack();
+        ms.translate(0.0, 0.0, -0.5*(near + far));
+        // ms.rotate(-30.0, [1, 0, 0]);
+        let m = ms.current();
+        uniforms.MV = m;
+        uniforms.N = mat3(m[0], m[1], m[2]);
+        console.log(uniforms.N);
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+
+        topology = gl.TRIANGLE_STRIP;
+
+        uniforms.lightPos = vec4(0, 0, 1, 0);
+
+        let t = 0.0;
+
+        render = function() {
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            programs[`${method}`].use();
+
+            gl.drawArraysInstanced(topology, 0, tessLevel * 2 + 2, tessLevel);
+        };
+
+        requestAnimationFrame(render);
+    };
+</script>
+
+<canvas id="canvas" width="800" height="800"></canvas>
+<table>
+<tr>
+<td>
+<div>
+    <input type="radio" name="method" checked
+        onchange="setMethod('vertex');">
+    <label>Vertex</label>
+    <br/>
+    <input type="radio" name="method"
+        onchange="setMethod('fragment');">
+    <label>Fragment</label>
+</div>
+</td>
+<td>
+<div>
+    <label>Tessellation level:</label>
+    <input type="range" min="1" max="20" value="1"
+        onchange="setTess(event)">
+</div>
+</td>
+<td>
+    <input type="checkbox"
+        onchange="setMode(event)">
+    <label>Show Geometry</label>
+</td>
+<td>
+    <input type="checkbox"
+        onchange="setLight(event)">
+    <label>Local light</label>
+</td>
+</tr>        
+</table>

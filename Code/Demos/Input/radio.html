@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<script src="../../Common/initShaders.js"></script>
+<script src="../../Common/MV.js"></script>
+<script src="../../Common/Disk.js"></script>
+
+<script>
+    var gl;
+    var disk;
+
+    function init () {
+        var canvas = document.getElementById("canvas");
+        gl = canvas.getContext("webgl2");
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+        disk = new Disk(20, 0.5);
+        disk.color = vec4(1.0, 1.0, 0.0, 1.0);
+
+        render();
+    };
+
+    function setColor(event) {
+        disk.color = eval(event.target.value);
+
+        requestAnimationFrame(render);
+    }
+
+    function render() {
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        disk.render();
+    }
+
+    window.onload = init;
+</script>
+
+<script id="Disk-vertex-shader" type="x-shader/x-vertex">
+    in vec4 aPosition;
+    
+    void main()
+    {
+        gl_PointSize = 3.0;
+        gl_Position = 0.8 * aPosition;
+        gl_Position.w = 1.0;
+    }
+</script>
+
+<script id="Disk-fragment-shader" type="x-shader/x-fragment">
+    out vec4 fColor;
+    
+    uniform vec4 color;
+    
+    void main()
+    {
+        fColor = color;
+    }
+</script>
+
+<body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+
+    <form onchange="setColor(event)">
+        Disk Color
+        <div>
+            <input type="radio" name="Color" value="vec4(1,0,0,1)"><label>Red</label><br>
+            <input type="radio" name="Color" value="vec4(0,1,0,1)"><label>Green</label><br>
+            <input type="radio" name="Color" value="vec4(0,0,1,1)"><label>Blue</label><br>
+        </div>
+    </form>
+
+</body>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+
+<script src="../../Common/initShaders.js"></script>
+
+<script id="vertex" type="x-shader/x-vertex">
+
+    in  vec4  aPosition;
+    in  vec4  aColor;
+    out vec4  vColor;
+
+    void main()
+    {
+        vColor = aColor;
+        gl_PointSize = 5.0;
+        gl_Position = vec4(aPosition.xy - 0.5, aPosition.zw);
+    }
+</script>
+
+<script id="fragment" type="x-shader/x-fragment">
+
+    in  vec4 vColor;
+    out vec4 fColor;
+
+    void main()
+    {
+        fColor = vColor;
+    }
+</script>
+
+<script>
+    var gl;
+
+    function vertexAttribSetup( numComponents, startingIndex, numValues ) {
+        const sizeofFloat32 = 4;
+        return {
+            numComponents : numComponents,
+            stride : numValues * sizeofFloat32,
+            offset : startingIndex * sizeofFloat32
+        };
+    }
+
+    function Square() {
+        let program = initShaders(gl, "vertex", "fragment");
+
+        let attributes = [
+            0.0, 0.0, 1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0, 0.0, 1.0,
+            0.0, 1.0, 1.0, 1.0, 1.0
+        ];
+        let positions = vertexAttribSetup(2, 0, 5);
+        let colors = vertexAttribSetup(3, 2, 5);
+
+        attributes.buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, attributes.buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attributes), gl.STATIC_DRAW);
+
+        aPosition = gl.getAttribLocation(program, "aPosition");
+        gl.enableVertexAttribArray(aPosition);
+
+        aColor = gl.getAttribLocation(program, "aColor");
+        gl.enableVertexAttribArray(aColor);
+
+
+        this.render = function () {
+            gl.useProgram(program);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, attributes.buffer);
+            gl.vertexAttribPointer(aPosition, positions.numComponents, gl.FLOAT, 
+                false, positions.stride, positions.offset);
+            gl.vertexAttribPointer(aColor, colors.numComponents, gl.FLOAT, 
+                false, colors.stride, colors.offset);
+
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+        };
+    }
+
+    window.onload = function () {
+        let canvas = document.getElementById("canvas");
+        gl = canvas.getContext("webgl2");
+
+        let square = new Square();
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        
+        render = function () {
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            square.render();
+        };
+
+        requestAnimationFrame(render);
+    };
+</script>
+
+<body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+</body>
